@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Traits\HttpResponses;
 use App\Models\CompanyModel;
+use App\Models\CompanyRecordingTable;
 
 class CompanyController extends Controller
 {
@@ -14,6 +15,14 @@ class CompanyController extends Controller
         $companies = CompanyModel::all();
         return $this->success([ 
             'company' => $companies
+        ]);
+    }
+
+
+    public function companyRecordTable(){
+        $companyRecord =  CompanyRecordingTable::all();
+        return $this->success([
+            'companyRecord' => $companyRecord
         ]);
     }
 

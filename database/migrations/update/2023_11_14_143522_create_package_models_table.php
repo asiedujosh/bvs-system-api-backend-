@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string("packageName")->unique();
             $table->string("packagePrice");
+            $table->string("packageMonth");
             $table->string("packageDetails");
             $table->timestamps();
         });

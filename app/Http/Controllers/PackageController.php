@@ -22,6 +22,7 @@ class PackageController extends Controller
         $package = new PackageModel;
         $package->packageName = $request->packageName;
         $package->packagePrice = $request->packagePrice;
+        $package->packageMonth = $request->packageMonth;
         $package->packageDetails = $request->packageDetails;
         $res = $package->save();
         if($res){

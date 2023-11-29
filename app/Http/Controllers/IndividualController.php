@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\Servicing;
 use App\Models\Status;
 use App\Models\ProductTechnicianModel;
+use App\Models\CompanyModel;
+use App\Models\CompanyRecordingTable;
 use App\Models\RecordingTable;
 use App\Http\Requests\AddIndividualRequest;
 use Illuminate\Support\Facades\Validator;
@@ -39,7 +41,9 @@ class IndividualController extends Controller
         //$request->validated($request->all());
         $client = new Client;
         $product = new Product;
+        $companyRecordingTable = new CompanyRecordingTable;
         $recordingTable = new RecordingTable;
+        $servicing = new Servicing;
 
         $client->clientId = $request->clientId;
         $client->clientName = $request->clientName;
@@ -51,35 +55,67 @@ class IndividualController extends Controller
         $product->clientId = $request->clientId;
         $product->productId = $request->productId;
         $product->carType = $request->carType;
+        $product->carBrand = $request->carBrand;
         $product->carColor = $request->carColor;
         $product->carImage = $request->imageUpload;
         $product->plateNo = $request->plateNo;
         $product->chasisNo = $request->chasisNo;
         $product->simNo = $request->simNo;
         $product->deviceNo = $request->deviceNo;
-        $product->paymentMode = $request->paymentMode;
         $product->purchaseType = $request->purchaseType;
+        $product->package = $request->package;
+        $product->technicalOfficer = $request->technicalOfficer;
         $product->plateform = $request->plateform;
-        $product->requestDate = $request->requestDate;
-        $product->action = "pending";
+        $product->startDate = $request->startDate;
+        $product->action = "active";
         $res = $product->save();
         }
 
-        $recordingTable->productId = $request->productId;
-        $recordingTable->clientId = $request->clientId;
-        $recordingTable->clientName = $request->clientName;
-        $recordingTable->clientTel = $request->clientTel;
-        $recordingTable->paymentMode = $request->paymentMode;
-        $recordingTable->state = "pending";
-        $recordingTable->save();
+        $servicing->productId = $request->productId;
+        $servicing->startDate = $request->startDate;
+        $servicing->expireDate = $request->expireDate;
+        $servicing->amtPaid = floatval($request->amtPaid);
+        $res = $servicing->save();
+
+        $company = CompanyModel::where('companyName', $request->companyName)->first();
+        $companyId = $request->associate == "Company" ? $company->id : null;
+
+        if($request->associate == "Company"){
+            $companyRec = CompanyRecordingTable::where('companyName', $companyId)->get();
+            if (count($companyRec) == 0) {
+                $companyRecordingTable->companyName = $companyId;
+                $companyRecordingTable->totalProducts = "1";
+                $companyRecordingTable->save();
+                } else {
+                $newData = $companyRec[0]->totalProducts + 1;
+                $formField = [
+                    'totalProducts' => $newData,
+                ];
+                  $res = CompanyRecordingTable::where('companyName', $companyId)->update($formField);
+                }
+            }
+
+            $recordingTable->productId = $request->productId;
+            $recordingTable->clientId = $request->clientId;
+            $recordingTable->associate = $request->associate;
+            $recordingTable->clientName = $request->clientName;
+            $recordingTable->clientLocation = $request->clientLocation;
+            $recordingTable->clientTel = $request->clientTel;
+            $recordingTable->companyName = $companyId;
+            $recordingTable->package = $request->package;
+            $recordingTable->startDate = $request->startDate;
+            $recordingTable->expireDate = $request->expireDate;
+            $recordingTable->status = "install";
+            $recordingTable->state = "active";
+            $res = $recordingTable->save();
        
-        if($res){
-       return $this->success([
-        'client' => $client,
-        'product' => $product,
-        'recording' => $recordingTable
-        ]);
-        }
+            if($res){
+            return $this->success([
+            'client' => $client,
+            'product' => $product,
+            'recording' => $recordingTable
+            ]);
+            }
     }
 
     public function productStore(Request $request){
@@ -109,6 +145,8 @@ class IndividualController extends Controller
         $recordingTable->paymentMode = $request->paymentMode;
         $recordingTable->state = "pending";
         $recordingTable->save();
+
+        $companyRecordingTable = new CompanyRecordingTable;
        
         if($res){
        return $this->success([

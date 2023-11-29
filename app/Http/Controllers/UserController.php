@@ -25,23 +25,27 @@ class UserController extends Controller
            ]);
     }
 
-    public function store(StoreUserRequest $request){
-        $request->validated($request->all());
+    public function store(Request $request){
+       //$request->validated($request->all());
 
-        $user = User::create([
-            'personnel_id' => $request->personnel_id,
-            'name' => $request->name,
-            'contact' => $request->contact,
-            'location' => $request->location,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'position' => $request->position,
-            'super_admin' => $request->role
-        ]);
+       $role = $request->position === "Administrator" ? true : false;
 
-       return $this->success([
-        'user' => $user
-       ]);
+       $user = new User;
+       $user->personnel_id = $request->personnel_id;
+       $user->name = $request->name;
+       $user->contact = $request->contact;
+       $user->location = $request->location;
+       $user->email = $request->email;
+       $user->password = $request->password;
+       $user->position = $request->position;
+       $user->super_admin = $role;
+       $res = $user->save();
+
+       if($res){
+        return $this->success([
+            'user' => $user
+           ]);
+       }
     }
 
     public function login(LoginUserRequest $request){
@@ -65,6 +69,68 @@ class UserController extends Controller
             'user'=>$user,
             'access_token' => $accessToken->plainTextToken,
             'refresh_token' => $refreshToken->plainTextToken,
+        ]);
+    }
+
+
+    public function changePassword(Request $request){
+        $credentials = $request->only('personnel_id', 'password');
+        if(!Auth::attempt($credentials)){
+            return $this->error('','Cannot change password', 401);
+        } else {
+            $formField = [
+                'password' => $request->password,
+            ];
+    
+            $res = User::where('personnel_id', $request->personnel_id)->update($formField);
+            if($res){
+                return $this->success([
+                    'message' => "User Updated Successfully"
+                ]);
+            }
+        }
+    }
+
+
+    public function staffProfile($id){
+        $res = User::where('id', $id)->first();
+        return $this->success([
+            'staffProfile' => $res
+        ]);
+    }
+
+
+    public function staffSearch(Request $request){
+        $results = User::latest()->filter(request(['keyword']))->get();
+        return $this->success([
+            'user' => $results
+        ]);
+    }
+
+
+    public function staffUpdate(Request $request, $id){
+        $role = $request->position === "Administrator" ? true : false;
+        $formField = [
+            'name' => $request->name,
+            'contact' => $request->contact,
+            'location' => $request->location,
+            'email' => $request->email,
+            'position' => $request->position,
+            'super_admin' => $role
+        ];
+
+        $res = User::where('id', $id)->update($formField);
+        if($res){
+            return $this->success([
+                'message' => "User Updated Successfully"
+            ]);
+        }
+    }
+
+    public function staffDelete($id){
+        $res = User::where('id', $id)->delete();
+        return $this->success([
+            'message' => "User deleted Successfully"
         ]);
     }
 

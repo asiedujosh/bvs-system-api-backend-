@@ -15,10 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string("productId");
             $table->foreign("productId")->references('productId')->on('products');
-            $table->date("startDate")->nullable();
-            $table->date("dueDate")->nullable();
-            $table->decimal("amountPaid")->nullable();
-            $table->string("serviceType");
+            $table->string("startDate")->nullable();
+            $table->string("expireDate")->nullable();
+            $table->decimal("amtPaid")->nullable();
             $table->timestamps();
         });
     }

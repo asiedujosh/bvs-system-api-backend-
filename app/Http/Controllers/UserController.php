@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\RoleModel;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\LoginUserRequest;
 use App\Traits\HttpResponses;
@@ -27,9 +28,7 @@ class UserController extends Controller
 
     public function store(Request $request){
        //$request->validated($request->all());
-
-       $role = $request->position === "Administrator" ? true : false;
-
+       $roleInfo = RoleModel::where("role", $request->position)->first();
        $user = new User;
        $user->personnel_id = $request->personnel_id;
        $user->name = $request->name;
@@ -37,8 +36,8 @@ class UserController extends Controller
        $user->location = $request->location;
        $user->email = $request->email;
        $user->password = $request->password;
-       $user->position = $request->position;
-       $user->super_admin = $role;
+       $user->position = $roleInfo->id;
+       $user->super_admin = false;
        $res = $user->save();
 
        if($res){
@@ -79,9 +78,8 @@ class UserController extends Controller
             return $this->error('','Cannot change password', 401);
         } else {
             $formField = [
-                'password' => $request->password,
+                'password' => Hash::make($request->password),
             ];
-    
             $res = User::where('personnel_id', $request->personnel_id)->update($formField);
             if($res){
                 return $this->success([

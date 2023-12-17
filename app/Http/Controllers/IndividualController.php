@@ -26,6 +26,7 @@ class IndividualController extends Controller
             'user' => $user
            ]);
     }
+
    
     public function search(Request $request) {
         // $keyword = $request->input('keyword');
@@ -157,49 +158,23 @@ class IndividualController extends Controller
 
     public function serviceStore(Request $request){
         $service = new Servicing;
-        $status = new Status;
         $recordingTable = new RecordingTable;
         $service->productId = $request->productId;
-        $service->startDate = $request->startDate;
-        $service->dueDate = $request->dueDate;
-        $service->amountPaid = $request->amountPaid;
-        $service->serviceType = $request->serviceType;
+        $service->startDate = $request->datePaid;
+        $service->expireDate = $request->expireDate;
+        $service->amtPaid = floatval($request->amtPaid);
         $res = $service->save();
 
 
         $formField = [
-            'serviceOn' => $request->serviceType,
-            'amtLastPaid' => $request->amountPaid,
-            'lastPaid' => $request->startDate,
-            'expiryDate' => $request->dueDate,
-            'status' => $request->serviceType === "Installation" ? "online" : "offline"
+            'startDate' => $request->startDate,
+            'expireDate' => $request->expireDate
         ];
           $res = RecordingTable::where('productId', $request->productId)->update($formField);
-        
-
-        if ($request->serviceType == "Installation" || $request->serviceType == "Removal") {
-            // Your code for installation or removal service
-            $productTechnician = new ProductTechnicianModel;
-            $productTechnician->productId = $request->productId;
-            $productTechnician->actionDate = $request->startDate;
-            $productTechnician->supervisor = $request->supervisor;
-            $productTechnician->technicalOfficer = $request->techOfficer;
-            $productTechnician->serviceType = $request->serviceType;
-            $productTechnician->save();
-            $formField2 = [
-                'status' => $request->serviceType === "Installation" ? "online" : "offline"
-            ];
-           
-            $res = RecordingTable::where('productId', $request->productId)->update($formField2);
-        }
-
-            $status->productId = $request->productId;
-            $status->status = $request->serviceType === "Installation" ? "online" : "offline";
-            $status->save();        
+                
           
         return $this->success([
-            'service' => $service,
-            'status' => $status
+            'service' => $service
             ]);
     }
 
@@ -222,10 +197,61 @@ class IndividualController extends Controller
     public function showRecordingTable(Request $request){
         $pageNo = $request->input('page');
         $perPage = $request->input('perPage');
-        $res = RecordingTable::paginate();
+        $res = RecordingTable::paginate($perPage, ['*'], 'perPage', $pageNo);
         return $this->success([
-            'dashTable' => $res
+            'dashTable' => $res,
+            'pagination' => [
+                'total' => $res->total(),
+                'current_page' => $res->currentPage(),
+                'last_page' => $res->lastPage(),
+            ],
             ]);
+    }
+
+    public function dueRecordingTable(Request $request){
+        $pageNo = $request->input('page');
+        $perPage = $request->input('perPage');
+        $res = RecordingTable::paginate($perPage, ['*'], 'perPage', $pageNo);
+
+        $data = [];
+        foreach ($res as $resObject) {
+            $result = checkExpiryDate($resObject->expireDate);
+            if(!$result){
+                array_push($data, $resObject);
+            }
+        }
+
+        return $this->success([
+            'dueData' => $data,
+            'pagination' => [
+                'total' => $res->total(),
+                'current_page' => $res->currentPage(),
+                'last_page' => $res->lastPage(),
+            ],
+        ]);
+
+    }
+
+    public function remindDueRecordTable(){
+        $res = RecordingTable::all();
+        $data = [];
+        foreach ($res as $resObject) {
+            $result = checkExpiryDate($resObject->expireDate);
+            if(!$result){
+                array_push($data, $resObject);
+            }
+        }
+
+        return $this->success([
+            'remindDueData' => $data
+        ]);
+    }
+
+    public function remindAllRecordTable(){
+        $res = RecordingTable::all();
+        return $this->success([
+            'remindAllData' => $res
+        ]);
     }
 
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\IndividualController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\AccessControlController;
 use App\Enums\TokenAbility;
 
 /*
@@ -31,14 +32,17 @@ Route::delete('/staffDelete/{id}',[UserController::class, 'staffDelete']);
 Route::post('/changePassword', [UserController::class, 'changePassword']);
 
 
-
 Route::post('/clientAdd',[IndividualController::class, 'store']);
 Route::post('/serviceAdd',[IndividualController::class, 'serviceStore']);
 Route::post('/addProducts',[IndividualController::class, 'productStore']);
+Route::post('/addRole', [AccessControlController::class, 'roleStore']);
 
 
 Route::get('/staffGetAll',[UserController::class, 'index']);
 Route::get('/records',[IndividualController::class,'showRecordingTable']);
+Route::get('/remindAllRecord',[IndividualController::class,'remindAllRecordTable']);
+Route::get('/remindDueRecord',[IndividualController::class,'remindDueRecordTable']);
+Route::get('/dueRecords',[IndividualController::class,'dueRecordingTable']);
 Route::get('/allServices',[IndividualController::class,'allServices']);
 Route::get('/getClient/{id}',[IndividualController::class,'showClientProfile']);
 Route::get('/getProducts/{id}',[IndividualController::class,'showProductsOfClient']);
@@ -61,6 +65,20 @@ Route::get('/packageProfile/{id}',[PackageController::class, 'packageProfile']);
 Route::put('/packageUpdate/{id}',[PackageController::class, 'packageUpdate']);
 Route::delete('/packageDelete/{id}',[PackageController::class, 'packageDelete']);
 
+//Get Role
+Route::get('/getAllRole',[AccessControlController::class, 'getAllRole']);
+
+//Get Permissions
+Route::get('/getAllClientPermission',[AccessControlController::class, 'getAllClientPermission']);
+Route::get('/getSingleClientPermission/{id}',[AccessControlController::class, 'getSingleClientPermission']);
+Route::get('/getAllCompanyPermission',[AccessControlController::class, 'getAllCompanyPermission']);
+Route::get('/getSingleCompanyPermission/{id}',[AccessControlController::class, 'getSingleCompanyPermission']);
+Route::get('/getAllPackagePermission',[AccessControlController::class, 'getAllPackagePermission']);
+Route::get('/getSinglePackagePermission/{id}',[AccessControlController::class, 'getSinglePackagePermission']);
+Route::get('/getAllUserPermission',[AccessControlController::class, 'getAllUserPermission']);
+Route::get('/getSingleUserPermission/{id}',[AccessControlController::class, 'getSingleUserPermission']);
+Route::put('/updatePermission',[AccessControlController::class, 'updatePermission']);
+Route::delete('/deleteRole/{id}',[AccessControlController::class, 'deleteRole']);
 
 
 Route::middleware(['auth:sanctum'])->get('/retrieve', [UserController::class, 'getUserDetails']);

@@ -7,6 +7,7 @@ use App\Http\Controllers\IndividualController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\AccessControlController;
+use App\Http\Controllers\smsController;
 use App\Enums\TokenAbility;
 
 /*
@@ -36,6 +37,10 @@ Route::post('/clientAdd',[IndividualController::class, 'store']);
 Route::post('/serviceAdd',[IndividualController::class, 'serviceStore']);
 Route::post('/addProducts',[IndividualController::class, 'productStore']);
 Route::post('/addRole', [AccessControlController::class, 'roleStore']);
+Route::put('/clientUpdate/{id}',[IndividualController::class, 'updateClient']);
+Route::put('/updateProduct/{id}',[IndividualController::class, 'updateProduct']);
+Route::put('/deactivateProduct/{id}',[IndividualController::class, 'deactivateProduct']);
+Route::put('/reactivateProduct/{id}',[IndividualController::class, 'reactivateProduct']);
 
 
 Route::get('/staffGetAll',[UserController::class, 'index']);
@@ -79,6 +84,10 @@ Route::get('/getAllUserPermission',[AccessControlController::class, 'getAllUserP
 Route::get('/getSingleUserPermission/{id}',[AccessControlController::class, 'getSingleUserPermission']);
 Route::put('/updatePermission',[AccessControlController::class, 'updatePermission']);
 Route::delete('/deleteRole/{id}',[AccessControlController::class, 'deleteRole']);
+
+
+//Get Sms Information
+Route::post('/sendSmsToClient',[smsController::class, 'sendSms']);
 
 
 Route::middleware(['auth:sanctum'])->get('/retrieve', [UserController::class, 'getUserDetails']);

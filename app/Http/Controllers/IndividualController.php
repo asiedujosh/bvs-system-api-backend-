@@ -12,6 +12,7 @@ use App\Models\ProductTechnicianModel;
 use App\Models\CompanyModel;
 use App\Models\CompanyRecordingTable;
 use App\Models\RecordingTable;
+use App\Models\historyRecordingTable;
 use App\Http\Requests\AddIndividualRequest;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -44,6 +45,7 @@ class IndividualController extends Controller
         $product = new Product;
         $companyRecordingTable = new CompanyRecordingTable;
         $recordingTable = new RecordingTable;
+        $historyRecordingTable = new historyRecordingTable;
         $servicing = new Servicing;
 
         $client->clientId = $request->clientId;
@@ -96,6 +98,21 @@ class IndividualController extends Controller
                 }
             }
 
+            $historyRecordingTable->productId = $request->productId;
+            $historyRecordingTable->clientId = $request->clientId;
+            $historyRecordingTable->associate = $request->associate;
+            $historyRecordingTable->clientName = $request->clientName;
+            $historyRecordingTable->clientLocation = $request->clientLocation;
+            $historyRecordingTable->clientTel = $request->clientTel;
+            $historyRecordingTable->companyName = $companyId;
+            $historyRecordingTable->package = $request->package;
+            $historyRecordingTable->startDate = $request->startDate;
+            $historyRecordingTable->expireDate = $request->expireDate;
+            $historyRecordingTable->status = "install";
+            $historyRecordingTable->state = "active";
+            $res = $historyRecordingTable->save();
+
+            if($res){
             $recordingTable->productId = $request->productId;
             $recordingTable->clientId = $request->clientId;
             $recordingTable->associate = $request->associate;
@@ -109,6 +126,7 @@ class IndividualController extends Controller
             $recordingTable->status = "install";
             $recordingTable->state = "active";
             $res = $recordingTable->save();
+            }
        
             if($res){
             return $this->success([
@@ -119,6 +137,74 @@ class IndividualController extends Controller
             }
     }
 
+    public function updateClient(Request $request, $id){
+        $formField = [
+            'clientName' => $request->clientName,
+            'clientTel' => $request->clientTel,
+            'clientLocation' => $request->clientLocation
+        ];
+
+        $res = Client::where('clientId', $id)->update($formField);
+        $res2 = RecordingTable::where('clientId', $id)->update($formField);
+        $res3 = historyRecordingTable::where('clientId', $id)->update($formField);
+        if($res){
+            return $this->success([
+            'data' => $res
+            ]);
+        }
+    }
+
+    public function updateProduct(Request $request, $id){
+        $formField = [
+            'carType' => $request->carType,
+            'carBrand' => $request->carBrand,
+            'carColor' => $request->carColor,
+            'carImage' => $request->carImage,
+            'plateNo' => $request->plateNo,
+            'chasisNo' => $request->chasisNo,
+            'simNo' => $request->simNo,
+            'deviceNo' => $request->deviceNo,
+            'technicalOfficer' => $request->technicalOfficer
+        ];
+
+        $res = Product::where('productId', $id)->update($formField);
+        if($res){
+            return $this->success([
+            'data' => $res
+            ]);
+        }
+    }
+
+    public function deactivateProduct(Request $request, $id){
+        $formField = [
+            'action' => "deactive"
+        ];
+
+        $res = Product::where('productId', $id)->update($formField);
+        $res2 = RecordingTable::where('productId', $id)->update($formField);
+        $res3 = historyRecordingTable::where('productId', $id)->update($formField);
+        if($res){
+            return $this->success([
+                'data' => $res
+                ]);
+        }
+    }
+
+    public function reactivateProduct(Request $request, $id){
+        $formField = [
+            'action' => 'active'
+        ];
+
+        $res = Product::where('productId', $id)->update($formField);
+        $res2 = RecordingTable::where('productId', $id)->update($formField);
+        $res3 = historyRecordingTable::where('productId', $id)->update($formField);
+        if($res){
+            return $this->success([
+                'data' => $res
+                ]);
+        }
+    }
+
     public function productStore(Request $request){
         $product = new Product;
         $recordingTable = new RecordingTable;
@@ -126,28 +212,53 @@ class IndividualController extends Controller
         $product->productId = $request->productId;
         $product->carType = $request->carType;
         $product->carColor = $request->carColor;
+        $product->carBrand = $request->carBrand;
         $product->carImage = $request->imageUpload;
         $product->plateNo = $request->plateNo;
         $product->chasisNo = $request->chasisNo;
         $product->simNo = $request->simNo;
         $product->deviceNo = $request->deviceNo;
-        $product->paymentMode = $request->paymentMode;
         $product->purchaseType = $request->purchaseType;
+        $product->package = $request->package;
+        $product->technicalOfficer = $request->technicalOfficer;
         $product->plateform = $request->plateform;
-        $product->requestDate = $request->requestDate;
-        $product->action = "pending";
+        $product->startDate = $request->startDate;
+        $product->action = "active";
         $res = $product->save();
-        
+
+        $servicing->productId = $request->productId;
+        $servicing->startDate = $request->startDate;
+        $servicing->expireDate = $request->expireDate;
+        $servicing->amtPaid = floatval($request->amtPaid);
+        $res = $servicing->save();
 
         $recordingTable->productId = $request->productId;
         $recordingTable->clientId = $request->clientId;
+        $recordingTable->associate = $request->associate;
         $recordingTable->clientName = $request->clientName;
+        $recordingTable->clientLocation = $request->clientLocation;
         $recordingTable->clientTel = $request->clientTel;
-        $recordingTable->paymentMode = $request->paymentMode;
-        $recordingTable->state = "pending";
-        $recordingTable->save();
+        $recordingTable->companyName = $request->companyName;
+        $recordingTable->package = $request->package;
+        $recordingTable->startDate = $request->startDate;
+        $recordingTable->expireDate = $request->expireDate;
+        $recordingTable->status = "install";
+        $recordingTable->state = "active";
+        $res = $recordingTable->save();
 
-        $companyRecordingTable = new CompanyRecordingTable;
+        $historyRecordingTable->productId = $request->productId;
+        $historyRecordingTable->clientId = $request->clientId;
+        $historyRecordingTable->associate = $request->associate;
+        $historyRecordingTable->clientName = $request->clientName;
+        $historyRecordingTable->clientLocation = $request->clientLocation;
+        $historyRecordingTable->clientTel = $request->clientTel;
+        $historyRecordingTable->companyName = $request->companyName;
+        $historyRecordingTable->package = $request->package;
+        $historyRecordingTable->startDate = $request->startDate;
+        $historyRecordingTable->expireDate = $request->expireDate;
+        $historyRecordingTable->status = "install";
+        $historyRecordingTable->state = "active";
+        $res = $historyRecordingTable->save();
        
         if($res){
        return $this->success([
@@ -159,12 +270,32 @@ class IndividualController extends Controller
     public function serviceStore(Request $request){
         $service = new Servicing;
         $recordingTable = new RecordingTable;
+        $historyRecordingTable = new historyRecordingTable;
+        
         $service->productId = $request->productId;
         $service->startDate = $request->datePaid;
         $service->expireDate = $request->expireDate;
         $service->amtPaid = floatval($request->amtPaid);
         $res = $service->save();
 
+
+        $recordingInfo = $recordingTable::where('productId', $request->productId)->first();
+
+        if($recordingInfo){
+        $historyRecordingTable->productId = $request->productId;
+        $historyRecordingTable->clientId = $recordingInfo->clientId;
+        $historyRecordingTable->associate = $recordingInfo->associate;
+        $historyRecordingTable->clientName = $recordingInfo->clientName;
+        $historyRecordingTable->clientLocation = $recordingInfo->clientLocation;
+        $historyRecordingTable->clientTel = $recordingInfo->clientTel;
+        $historyRecordingTable->companyName = $recordingInfo->companyName;
+        $historyRecordingTable->package = $recordingInfo->package;
+        $historyRecordingTable->startDate = $request->startDate;
+        $historyRecordingTable->expireDate = $request->expireDate;
+        $historyRecordingTable->status = "install";
+        $historyRecordingTable->state = "active";
+        $res = $historyRecordingTable->save();
+        }
 
         $formField = [
             'startDate' => $request->startDate,

@@ -41,6 +41,9 @@ Route::put('/clientUpdate/{id}',[IndividualController::class, 'updateClient']);
 Route::put('/updateProduct/{id}',[IndividualController::class, 'updateProduct']);
 Route::put('/deactivateProduct/{id}',[IndividualController::class, 'deactivateProduct']);
 Route::put('/reactivateProduct/{id}',[IndividualController::class, 'reactivateProduct']);
+Route::delete('/deleteProduct',[IndividualController::class, 'deleteProduct']);
+Route::delete('/deleteClient',[IndividualController::class, 'deleteClient']);
+Route::delete('/deleteService',[IndividualController::class, 'deleteService']);
 
 
 Route::get('/staffGetAll',[UserController::class, 'index']);
@@ -82,6 +85,10 @@ Route::get('/getAllPackagePermission',[AccessControlController::class, 'getAllPa
 Route::get('/getSinglePackagePermission/{id}',[AccessControlController::class, 'getSinglePackagePermission']);
 Route::get('/getAllUserPermission',[AccessControlController::class, 'getAllUserPermission']);
 Route::get('/getSingleUserPermission/{id}',[AccessControlController::class, 'getSingleUserPermission']);
+Route::get('/getAllServicePermission',[AccessControlController::class, 'getAllServicePermission']);
+Route::get('/getSingleServicePermission/{id}',[AccessControlController::class, 'getSingleServicePermission']);
+Route::get('/getAllProductPermission',[AccessControlController::class, 'getAllProductPermission']);
+Route::get('/getSingleProductPermission/{id}',[AccessControlController::class, 'getSingleProductPermission']);
 Route::put('/updatePermission',[AccessControlController::class, 'updatePermission']);
 Route::delete('/deleteRole/{id}',[AccessControlController::class, 'deleteRole']);
 

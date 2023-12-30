@@ -8,6 +8,8 @@ use App\Models\RoleModel;
 use App\Models\PermissionModel;
 use App\Models\CompanyPermissionModel;
 use App\Models\PackagePermissionModel;
+use App\Models\ProductPermissionModel;
+use App\Models\ServicePermissionModel;
 use App\Models\UserPermissionModel;
 
 class AccessControlController extends Controller
@@ -53,6 +55,22 @@ class AccessControlController extends Controller
             $userPermission->update = false;
             $userPermission->delete = false;
             $userPermission->save();
+
+            $servicePermission = new ServicePermissionModel;
+            $servicePermission->role_id = $roleInfo->id;
+            $servicePermission->view = false;
+            $servicePermission->create = false;
+            $servicePermission->update = false;
+            $servicePermission->delete = false;
+            $servicePermission->save();
+
+            $productPermission = new ProductPermissionModel;
+            $productPermission->role_id = $roleInfo->id;
+            $productPermission->view = false;
+            $productPermission->create = false;
+            $productPermission->update = false;
+            $productPermission->delete = false;
+            $productPermission->save();
         }
 
         return $this->success([
@@ -123,6 +141,37 @@ class AccessControlController extends Controller
         ]);
     }
 
+
+    public function getAllServicePermission(){
+        $servicePermission = ServicePermissionModel::all();
+        return $this->success([
+            'servicePermission' => $servicePermission
+        ]);
+    }
+
+    public function getSingleServicePermission($id){
+        $singleServicePermission = ServicePermissionModel::where('role_id', $id)->first();
+        return $this->success([
+            'singleServicePermission' => $singleServicePermission
+        ]);
+    }
+
+
+    public function getAllProductPermission(){
+        $productPermission = ProductPermissionModel::all();
+        return $this->success([
+            'productPermission' => $productPermission
+        ]);
+    }
+
+    public function getSingleProductPermission($id){
+        $singleProductPermission = ProductPermissionModel::where('role_id', $id)->first();
+        return $this->success([
+            'singleProductPermission' => $singleProductPermission
+        ]);
+    }
+
+
     public function updatePermission(Request $request){
         $roleId = $request->role['id'];
        // return $roleId;
@@ -169,6 +218,26 @@ class AccessControlController extends Controller
                         ];
                         CompanyPermissionModel::where('role_id', $roleId)->update($formField);
                         break;
+
+                    case 'Product':
+                        $formField = [
+                            'view' => $item['read'],
+                            'create' => $item['create'],
+                            'update' => $item['update'],
+                            'delete' => $item['delete']
+                        ];
+                        ProductPermissionModel::where('role_id', $roleId)->update($formField);
+                        break;
+
+                    case 'Service':
+                        $formField = [
+                            'view' => $item['read'],
+                            'create' => $item['create'],
+                            'update' => $item['update'],
+                            'delete' => $item['delete']
+                        ];
+                        ServicePermissionModel::where('role_id', $roleId)->update($formField);
+                        break;
                     
                     default:
                         echo 'Default processing';
@@ -188,6 +257,8 @@ class AccessControlController extends Controller
         $res = PackagePermissionModel::where('role_id', $roleId)->delete();
         $res = CompanyPermissionModel::where('role_id', $roleId)->delete();
         $res = UserPermissionModel::where('role_id', $roleId)->delete();
+        $res = ProductPermissionModel::where('role_id', $roleId)->delete();
+        $res = ServicePermissionModel::where('role_id', $roleId)->delete();
 
         return $this->success([
             'res' => $res

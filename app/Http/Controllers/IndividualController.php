@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers;
 //use App\Constants\ProductConstants;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ use App\Models\historyRecordingTable;
 use App\Http\Requests\AddIndividualRequest;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class IndividualController extends Controller
 {
@@ -80,6 +82,8 @@ class IndividualController extends Controller
         $servicing->amtPaid = floatval($request->amtPaid);
         $res = $servicing->save();
 
+        $latestService = Servicing::latest('created_at')->first();
+
         $company = CompanyModel::where('companyName', $request->companyName)->first();
         $companyId = $request->associate == "Company" ? $company->id : null;
 
@@ -100,6 +104,7 @@ class IndividualController extends Controller
 
             $historyRecordingTable->productId = $request->productId;
             $historyRecordingTable->clientId = $request->clientId;
+            $historyRecordingTable->serviceId = $latestService->id;
             $historyRecordingTable->associate = $request->associate;
             $historyRecordingTable->clientName = $request->clientName;
             $historyRecordingTable->clientLocation = $request->clientLocation;
@@ -163,9 +168,13 @@ class IndividualController extends Controller
             'plateNo' => $request->plateNo,
             'chasisNo' => $request->chasisNo,
             'simNo' => $request->simNo,
-            'deviceNo' => $request->deviceNo,
-            'technicalOfficer' => $request->technicalOfficer
+            'deviceNo' => $request->deviceNo
         ];
+
+        // Check if 'technicalOfficer' has a value before adding it to $formField
+        if (!empty($request->technicalOfficer)) {
+            $formField['technicalOfficer'] = $request->technicalOfficer;
+        }
 
         $res = Product::where('productId', $id)->update($formField);
         if($res){
@@ -180,9 +189,13 @@ class IndividualController extends Controller
             'action' => "deactive"
         ];
 
+        $formField2 = [
+            'state' => "deactive"
+        ];
+
         $res = Product::where('productId', $id)->update($formField);
-        $res2 = RecordingTable::where('productId', $id)->update($formField);
-        $res3 = historyRecordingTable::where('productId', $id)->update($formField);
+        $res2 = RecordingTable::where('productId', $id)->update($formField2);
+        $res3 = historyRecordingTable::where('productId', $id)->update($formField2);
         if($res){
             return $this->success([
                 'data' => $res
@@ -195,9 +208,13 @@ class IndividualController extends Controller
             'action' => 'active'
         ];
 
+        $formField2 = [
+            'state' => "active"
+        ];
+
         $res = Product::where('productId', $id)->update($formField);
-        $res2 = RecordingTable::where('productId', $id)->update($formField);
-        $res3 = historyRecordingTable::where('productId', $id)->update($formField);
+        $res2 = RecordingTable::where('productId', $id)->update($formField2);
+        $res3 = historyRecordingTable::where('productId', $id)->update($formField2);
         if($res){
             return $this->success([
                 'data' => $res
@@ -208,6 +225,9 @@ class IndividualController extends Controller
     public function productStore(Request $request){
         $product = new Product;
         $recordingTable = new RecordingTable;
+        $service = new Servicing;
+        $historyRecordingTable = new historyRecordingTable;
+
         $product->clientId = $request->clientId;
         $product->productId = $request->productId;
         $product->carType = $request->carType;
@@ -226,11 +246,13 @@ class IndividualController extends Controller
         $product->action = "active";
         $res = $product->save();
 
-        $servicing->productId = $request->productId;
-        $servicing->startDate = $request->startDate;
-        $servicing->expireDate = $request->expireDate;
-        $servicing->amtPaid = floatval($request->amtPaid);
-        $res = $servicing->save();
+        $service->productId = $request->productId;
+        $service->startDate = $request->startDate;
+        $service->expireDate = $request->expireDate;
+        $service->amtPaid = floatval($request->amtPaid);
+        $res = $service->save();
+
+        $latestService = Servicing::latest('created_at')->first();
 
         $recordingTable->productId = $request->productId;
         $recordingTable->clientId = $request->clientId;
@@ -247,6 +269,7 @@ class IndividualController extends Controller
         $res = $recordingTable->save();
 
         $historyRecordingTable->productId = $request->productId;
+        $historyRecordingTable->serviceId = $latestService->id;
         $historyRecordingTable->clientId = $request->clientId;
         $historyRecordingTable->associate = $request->associate;
         $historyRecordingTable->clientName = $request->clientName;
@@ -278,11 +301,12 @@ class IndividualController extends Controller
         $service->amtPaid = floatval($request->amtPaid);
         $res = $service->save();
 
-
+        $latestService = Servicing::latest('created_at')->first();
         $recordingInfo = $recordingTable::where('productId', $request->productId)->first();
 
         if($recordingInfo){
         $historyRecordingTable->productId = $request->productId;
+        $historyRecordingTable->serviceId = $latestService->id;
         $historyRecordingTable->clientId = $recordingInfo->clientId;
         $historyRecordingTable->associate = $recordingInfo->associate;
         $historyRecordingTable->clientName = $recordingInfo->clientName;
@@ -317,6 +341,7 @@ class IndividualController extends Controller
         ]);
     }
 
+
     public function showProductsOfClient($id){
         $res = Product::where('clientId', $id)->get();
         return ([
@@ -328,7 +353,7 @@ class IndividualController extends Controller
     public function showRecordingTable(Request $request){
         $pageNo = $request->input('page');
         $perPage = $request->input('perPage');
-        $res = RecordingTable::paginate($perPage, ['*'], 'perPage', $pageNo);
+        $res = RecordingTable::where('state', '=', 'active')->paginate($perPage, ['*'], 'perPage', $pageNo);
         return $this->success([
             'dashTable' => $res,
             'pagination' => [
@@ -336,13 +361,13 @@ class IndividualController extends Controller
                 'current_page' => $res->currentPage(),
                 'last_page' => $res->lastPage(),
             ],
-            ]);
+        ]);
     }
 
     public function dueRecordingTable(Request $request){
         $pageNo = $request->input('page');
         $perPage = $request->input('perPage');
-        $res = RecordingTable::paginate($perPage, ['*'], 'perPage', $pageNo);
+        $res = RecordingTable::where('state', '=', 'active')->paginate($perPage, ['*'], 'perPage', $pageNo);
 
         $data = [];
         foreach ($res as $resObject) {
@@ -392,5 +417,152 @@ class IndividualController extends Controller
             'services' => $res
         ]);
     }
+
+    public function deleteService(Request $request)
+    {
+        try {
+            // Start a database transaction
+            DB::beginTransaction();
+    
+            $productId = $request->productId;
+            $serviceId = $request->serviceId;
+    
+            // Delete history record with serviceId
+            $historyRecordingTable = HistoryRecordingTable::where('serviceId', $serviceId)->first();
+            if ($historyRecordingTable) {
+                $historyRecordingTable->delete();
+            }
+    
+            // Retrieve the latest history record based on productId
+            $latestHisto = HistoryRecordingTable::where('productId', $productId)->latest('created_at')->first();
+    
+            if ($latestHisto) {
+                // Update RecordingTable with the latest history record data
+                $formField = [
+                    'startDate' => $latestHisto->startDate,
+                    'expireDate' => $latestHisto->expireDate
+                ];
+        
+                $res = RecordingTable::where('productId', $productId)->update($formField);
+            }
+    
+           // Delete the service record
+            $serviceTable = Servicing::where('id', $serviceId)->first();
+            if ($serviceTable) {
+                $serviceTable->delete();
+            }
+    
+            // Commit the transaction if all operations succeed
+            DB::commit();
+            return $this->success(['message' => 'Service deleted successfully']);
+        } catch (\Exception $e) {
+            // Rollback the transaction on any exception
+            DB::rollback();
+            return response()->json(['error' => 'Failed to delete service']);
+        }
+    }
+
+
+    public function deleteProduct(Request $request)
+    {
+        $productId = $request->productId;
+    
+        try {
+            // Start a database transaction
+            DB::beginTransaction();
+    
+            $product = Product::where('productId', $productId)->first();;
+            $recordingTable = RecordingTable::where('productId', $productId)->first();
+            $service = Servicing::where('productId', $productId)->first();
+            $historyRecordingTable = HistoryRecordingTable::where('productId', $productId)->first();
+    
+            if ($product) {
+                $product->delete();
+            }
+    
+            if ($recordingTable) {
+                $recordingTable->delete();
+            }
+    
+            if ($service) {
+                $service->delete();
+            }
+    
+            if ($historyRecordingTable) {
+                $historyRecordingTable->delete();
+            }
+    
+            // Commit the transaction if all deletions succeed
+            DB::commit();
+    
+            return $this->success(['data' => 'Product deleted successfully']);
+        } catch (\Exception $e) {
+            // Rollback the transaction on any exception
+            DB::rollback();
+            return $this->error(['message' => 'Failed to delete records']);
+        }
+    }
+    
+
+    public function deleteClient(Request $request)
+    {
+        $productIds = $request->productIds;
+
+        if (is_array($productIds)) {
+            $deletedRecords = [];
+
+            try {
+                // Start a database transaction
+                DB::beginTransaction();
+
+                foreach ($productIds as $productId) {
+                    $product = Product::where('productId', $productId)->first();
+                    $recordingTable = RecordingTable::where('productId', $productId)->first();
+                    $service = Servicing::where('productId', $productId)->first();
+                    $historyRecordingTable = HistoryRecordingTable::where('productId', $productId)->first();
+
+                    if ($product) {
+                        $product->delete();
+                        $deletedRecords['product'][] = $productId;
+                    }
+
+                    if ($recordingTable) {
+                        $recordingTable->delete();
+                        $deletedRecords['recordingTable'][] = $productId;
+                    }
+
+                    if ($service) {
+                        $service->delete();
+                        $deletedRecords['service'][] = $productId;
+                    }
+
+                    if ($historyRecordingTable) {
+                        $historyRecordingTable->delete();
+                        $deletedRecords['historyRecordingTable'][] = $productId;
+                    }
+                }
+
+                // Commit the transaction if all deletions succeed
+                DB::commit();
+            } catch (\Exception $e) {
+                // Rollback the transaction on any exception
+                DB::rollback();
+
+                return $this->error(['message' => 'Failed to delete records']);
+            }
+
+            // After the loop, delete the client record
+            $client = Client::where('clientId', $request->clientId)->first();
+            if ($client) {
+                $client->delete();
+                $deletedRecords['client'][] = $request->clientId;
+            }
+
+            return $this->success(['deletedRecords' => $deletedRecords]);
+        }
+
+        return $this->success(['product' => $productIds]);
+    }
+
 
 }

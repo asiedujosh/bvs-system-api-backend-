@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('history_recording_tables', function (Blueprint $table) {
             $table->id();
             $table->string('productId');
+            $table->string('serviceId');
             $table->string('clientId');
             $table->string('associate');
             $table->string('clientName');
